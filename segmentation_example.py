@@ -18,18 +18,24 @@ from torchvision_multi.datasets import image_loader
 
 batch_size = 2
 transform = transform_multi.SegCompose([
-    transform_multi.SegRandomRotate(0.4)
+    # transform_multi.SegRandomRotate(0.4),
     # transform_multi.RandomShift(0.5, 30, 30),
-    # transform_multi.RandomCrop((200,200)),
-    # transform_multi.SegRandomNoise(0.5,16),
-
+    # transform_multi.SegRandomCrop((200,200)),
+    transform_multi.SegRandomNoise(1,8),
+    transform_multi.SegToTensor(),
     # transform_multi.Lambda(lambda x: transform_multi.to_tensor(x))
 ])
 
+# trainset = image_loader.SemanticSegmentationLoader(
+#     rootdir='./sample-data/', lstpath='./sample-data/segmentation_tiff.lst',
+#     filetype='tif', transform=transform,
+# )
+
 trainset = image_loader.SemanticSegmentationLoader(
     rootdir='./sample-data/', lstpath='./sample-data/segmentation.lst',
-    filetype='jpg', transform=transform,
+    filetype='png', transform=transform,
 )
+
 trainloader = DataLoader(dataset=trainset, batch_size=batch_size, shuffle=False)
 
 for step, (inputs, targets) in enumerate(trainloader):

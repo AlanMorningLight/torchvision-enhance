@@ -14,7 +14,7 @@ import collections
 from skimage.external import tifffile
 from skimage import transform, filters
 from skimage import util
-from skimage.util.dtype import img_as_uint
+from skimage.util.dtype import img_as_uint,img_as_ubyte
 import cv2
 
 """
@@ -313,15 +313,12 @@ def randomcrop(img, outsize=(224,224)):
     """
 
     type = img.dtype
-
+    if outsize[0] > img.shape[0] or outsize[1] > img.shape[1]:
+        raise ValueError("SegRandomCrop.outsize larger than the input image")
     src_rows = img.shape[0]
     src_cols = img.shape[1]
-    out_shpe = outsize
-    out_rows = out_shpe[0]
-    out_cols = out_shpe[1]
-
-    if (out_rows > src_rows or out_cols > src_cols):
-        raise ValueError("the outsize of the image larger than the input!!!")
+    out_rows = outsize[0]
+    out_cols = outsize[1]
 
     random_rows_up = np.random.randint(0, int(src_rows - out_rows + 1))
     random_cols_left = np.random.randint(0, int(src_cols - out_cols + 1))
@@ -333,6 +330,45 @@ def randomcrop(img, outsize=(224,224)):
     img_new = img_new.astype(type)
     return img_new
 
+def crop(img,
+         random_rows_up=0,
+         random_rows_down=0,
+         random_cols_left=0,
+         random_cols_right=0,
+         deep=3
+         ):
+    """Crop a image at the same time
+
+        Parameters
+        ----------
+        img : input
+        random_rows_up:Number of values to remove from the edges in the top.
+        random_rows_down:Number of values to remove from the edges in the bottom.
+        random_cols_left:Number of values to remove from the edges in the left
+        random_cols_right:Number of values to remove from the edges in the right
+        deep: the dimentions of the input image
+
+        Returns
+        -------
+        Croped_image : ndarray
+
+    """
+
+    type = img.dtype
+    random_rows_up = random_rows_up
+    random_cols_left = random_cols_left
+    random_rows_down = random_rows_down
+    random_cols_right = random_cols_right
+
+    if deep==1:
+        img_new = util.crop(img, ((random_rows_up, random_rows_down), (random_cols_left, random_cols_right)))
+        #img_new = util.crop(((first_dimention),(sec_dimen),(third_dimen)))
+    elif deep==3:
+        img_new = util.crop(img, ((random_rows_up, random_rows_down), (random_cols_left, random_cols_right), (0, 0)))
+        # img_new = util.crop(((first_dimention),(sec_dimen),(third_dimen)))
+
+    img_new = img_new.astype(type)
+    return img_new
 
 class RandomCrop(object):
     """shift the image.
@@ -378,14 +414,12 @@ def noise(img, uintpara=16, Mean=0, Var=None):
 
     if uintpara==8:
         img = img.astype(np.uint8)
+        img_new = util.random_noise(img, mode='gaussian', mean=Mean, var=Var)
+        img_new = img_as_ubyte(img_new)
     if uintpara==16:
         img = img.astype(np.uint16)
-
-    img_new = util.random_noise(img, mode='gaussian', mean=Mean, var=Var)
-
-    img_new =img_as_uint(img_new)
-    if uintpara == 8:
-        img_new = img_new.astype(np.uint8)
+        img_new = util.random_noise(img, mode='gaussian', mean=Mean, var=Var)
+        img_new = img_as_uint(img_new)
 
     img_new = img_new.astype(type)
 
@@ -623,9 +657,18 @@ class SegRandomCrop(object):
         #     raise ValueError('SegRandomCrop has no target parameters ')
         if self.outsize[0] > img.shape[0] or self.outsize[1] > img.shape[1]:
             raise ValueError("SegRandomCrop.outsize larger than the input image")
+        src_rows = img.shape[0]
+        src_cols = img.shape[1]
+        out_rows = self.outsize[0]
+        out_cols = self.outsize[1]
 
-        img_trans = randomcrop(img, self.outsize)
-        target_trans = randomcrop(target, self.outsize)
+        random_rows_up = np.random.randint(0, int(src_rows - out_rows + 1))
+        random_cols_left = np.random.randint(0, int(src_cols - out_cols + 1))
+        random_rows_down = src_rows - out_rows - random_rows_up
+        random_cols_right = src_cols - out_cols - random_cols_left
+
+        img_trans = crop(img, random_rows_up,random_rows_down, random_cols_left, random_cols_right,deep=3)
+        target_trans = crop(target, random_rows_up,random_rows_down, random_cols_left, random_cols_right,deep=1)
         return img_trans, target_trans
 
 class SegRandomNoise(object):
@@ -805,11 +848,11 @@ def pad(img, padding, fill=0):
     return ImageOps.expand(img, border=padding, fill=fill)
 
 
-def crop(img, x, y, w, h):
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    return img.crop((x, y, x + w, y + h))
+# def crop(img, x, y, w, h):
+#     if not _is_pil_image(img):
+#         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+#
+#     return img.crop((x, y, x + w, y + h))
 
 
 def scaled_crop(img, x, y, w, h, size, interpolation=Image.BILINEAR):
