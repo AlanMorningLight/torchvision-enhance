@@ -478,6 +478,29 @@ def gaussianblur(img, sigma=1, multichannel=True):
     img_new = img_new.astype(type)
     return img_new
 
+def pad(img,pad_width=[(0,0),(0,0),(0,0)], mode='reflect',**kwargs):
+    """Pad the given image.
+
+    Args:
+        pad_width : {sequence, array_like, int}
+                    Number of values padded to the edges of
+                    each axis. ((before_1, after_1), ...
+                    (before_N, after_N)) unique pad widths
+                     for each axis. ((before, after),) yields
+                     same before and after pad for each axis.
+                    (pad,) or int is a shortcut for before = after
+                    = pad width for all axes.
+        mode: str or function. contain{‘constant’,‘edge’,‘linear_ramp’,‘maximum’,‘mean’
+            , ‘median’, ‘minimum’, ‘reflect’,‘symmetric’,‘wrap’}
+    Examples
+        --------
+
+    """
+
+    pad_width = pad_width
+    mode = mode
+    return np.pad(img, pad_width, mode)
+
 
 class GaussianBlur(object):
     def __init__(self, probability, sigma=1, multichannel=True):
@@ -631,6 +654,34 @@ class CenterCrop(object):
         return x1, y1, tw, th
 
         return crop(img, x1, y1, tw, th)
+
+class Pad(object):
+    """Pad the given image.
+
+    Args:
+        pad_width : {sequence, array_like, int}
+                    Number of values padded to the edges of
+                    each axis. ((before_1, after_1), ...
+                    (before_N, after_N)) unique pad widths
+                     for each axis. ((before, after),) yields
+                     same before and after pad for each axis.
+                    (pad,) or int is a shortcut for before = after
+                    = pad width for all axes.
+        mode: str or function. contain{‘constant’,‘edge’,‘linear_ramp’,‘maximum’,‘mean’
+            , ‘median’, ‘minimum’, ‘reflect’,‘symmetric’,‘wrap’}
+    Examples
+        --------
+        >>> paded=Pad(img,[(10,10),(20,20),(0,0)],"reflect")
+
+    """
+
+    def __init__(self, pad_width=[(0,0),(0,0),(0,0)], mode='reflect',**kwargs):
+
+        self.pad_width = pad_width
+        self.mode = mode
+
+    def __call__(self, img):
+        return np.pad(img, self.pad_width, self.mode)
 
 ##======================= semantic segmentation =============================================
 class SegRandomRotate(object):
@@ -809,7 +860,34 @@ class SegRandomFlip(object):
         else:
             return flip(img, flip_mode), flip(target, flip_mode)
 
+class SegPad(object):
+    """Pad the given image.
 
+    Args:
+        pad_width : {sequence, array_like, int}
+                    Number of values padded to the edges of
+                    each axis. ((before_1, after_1), ...
+                    (before_N, after_N)) unique pad widths
+                     for each axis. ((before, after),) yields
+                     same before and after pad for each axis.
+                    (pad,) or int is a shortcut for before = after
+                    = pad width for all axes.
+        mode: str or function. contain{‘constant’,‘edge’,‘linear_ramp’,‘maximum’,‘mean’
+            , ‘median’, ‘minimum’, ‘reflect’,‘symmetric’,‘wrap’}
+    Examples
+        --------
+    """
+
+    def __init__(self, pad_width=[(0, 0),(0, 0),(0, 0)], mode='reflect', **kwargs):
+
+        self.img_pad_width = pad_width
+        self.target_pad_width = pad_width[:2]
+        self.mode = mode
+
+    def __call__(self, img, target):
+        img_pad=np.pad(img, self.img_pad_width, self.mode)
+        target_pad = np.pad(target, self.target_pad_width, self.mode)
+        return img_pad, target_pad
 
 # ====================================================================================================
 
@@ -863,20 +941,20 @@ def scale(img, size, interpolation=Image.BILINEAR):
         return img.resize(size, interpolation)
 
 
-def pad(img, padding, fill=0):
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    if not isinstance(padding, (numbers.Number, tuple)):
-        raise TypeError('Got inappropriate padding arg')
-    if not isinstance(fill, (numbers.Number, str, tuple)):
-        raise TypeError('Got inappropriate fill arg')
-
-    if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
-        raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
-                         "{} element tuple".format(len(padding)))
-
-    return ImageOps.expand(img, border=padding, fill=fill)
+# def pad(img, padding, fill=0):
+#     if not _is_pil_image(img):
+#         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+#
+#     if not isinstance(padding, (numbers.Number, tuple)):
+#         raise TypeError('Got inappropriate padding arg')
+#     if not isinstance(fill, (numbers.Number, str, tuple)):
+#         raise TypeError('Got inappropriate fill arg')
+#
+#     if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
+#         raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
+#                          "{} element tuple".format(len(padding)))
+#
+#     return ImageOps.expand(img, border=padding, fill=fill)
 
 
 # def crop(img, x, y, w, h):
@@ -1046,41 +1124,6 @@ class Scale(object):
             PIL.Image: Rescaled image.
         """
         return scale(img, self.size, self.interpolation)
-
-
-class Pad(object):
-    """Pad the given PIL.Image on all sides with the given "pad" value.
-
-    Args:
-        padding (int or tuple): Padding on each border. If a single int is provided this
-            is used to pad all borders. If tuple of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple of length 4 is provided
-            this is the padding for the left, top, right and bottom borders
-            respectively.
-        fill: Pixel fill value. Default is 0. If a tuple of
-            length 3, it is used to fill R, G, B channels respectively.
-    """
-
-    def __init__(self, padding, fill=0):
-        assert isinstance(padding, (numbers.Number, tuple))
-        assert isinstance(fill, (numbers.Number, str, tuple))
-        if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
-            raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
-                             "{} element tuple".format(len(padding)))
-
-        self.padding = padding
-        self.fill = fill
-
-    def __call__(self, img):
-        """
-        Args:
-            img (PIL.Image): Image to be padded.
-
-        Returns:
-            PIL.Image: Padded image.
-        """
-        return pad(img, self.padding, self.fill)
-
 
 class Lambda(object):
     """Apply a user-defined lambda as a transform.
