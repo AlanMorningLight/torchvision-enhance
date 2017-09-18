@@ -207,7 +207,10 @@ class SemanticSegmentationLoader(Dataset):
         target = self.loader(target, 'png')
 
         if self.transform is not None:
+            print(target.shape, target.dtype)
             image, target = self.transform(image, target)
+            print(target.shape,target.dtype)
+            print("\n")
             target = torch.from_numpy(target).long()
             # label = label.view(label.shape[1], label.shape[2]).long()  # 经过transform_enhance变换后，处理成width、height，LongTensor
         # if self.target_transform is not None:

@@ -600,6 +600,37 @@ class PieceTransfor(object):
         else:
             return img
 
+class CenterCrop(object):
+    """Crops the given PIL.Image at the center.
+
+    Args:
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made.
+    """
+
+    def __init__(self, size):
+        if isinstance(size, numbers.Number):
+            self.size = (int(size), int(size))
+        else:
+            self.size = size
+
+    def __call__(self, img):
+        """
+        Args:
+            img : Image to be cropped.
+
+        Returns:
+            Cropped image.
+        """
+
+        w, h = img.size
+        th, tw = self.size
+        x1 = int(round((w - tw) / 2.))
+        y1 = int(round((h - th) / 2.))
+        return x1, y1, tw, th
+
+        return crop(img, x1, y1, tw, th)
 
 ##======================= semantic segmentation =============================================
 class SegRandomRotate(object):
@@ -1015,40 +1046,6 @@ class Scale(object):
             PIL.Image: Rescaled image.
         """
         return scale(img, self.size, self.interpolation)
-
-
-class CenterCrop(object):
-    """Crops the given PIL.Image at the center.
-
-    Args:
-        size (sequence or int): Desired output size of the crop. If size is an
-            int instead of sequence like (h, w), a square crop (size, size) is
-            made.
-    """
-
-    def __init__(self, size):
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        else:
-            self.size = size
-
-    def get_params(self, img):
-        w, h = img.size
-        th, tw = self.size
-        x1 = int(round((w - tw) / 2.))
-        y1 = int(round((h - th) / 2.))
-        return x1, y1, tw, th
-
-    def __call__(self, img):
-        """
-        Args:
-            img (PIL.Image): Image to be cropped.
-
-        Returns:
-            PIL.Image: Cropped image.
-        """
-        x1, y1, tw, th = self.get_params(img)
-        return crop(img, x1, y1, tw, th)
 
 
 class Pad(object):
