@@ -187,14 +187,17 @@ def rotate(img, angle=0,order=1):
 
         Parameters
         ----------
-        img : ndarray(uint16 or uint8)
+        img : ndarray
             Input image.
         angle : integer
             Rotation angle in degrees in counter-clockwise direction.
+        order : int, optional
+        The order of the spline interpolation, default is 1. The order has to
+        be in the range 0-5. See `skimage.transform.warp` for detail.
 
         Returns
         -------
-        rotated : ndarray(uint16 or uint8)
+        rotated : ndarray
                 Rotated version of the input.
 
         Examples
@@ -218,9 +221,9 @@ class RandomRotate(object):
     """rotate the image.
 
         Args:
-            probability:the probability of the operation
+            probability:the probability of the operation(0<=double<=1)
         Example:
-            >>> transform_multi.Randomrotate()
+            >>> transform_multi.Randomrotate(probability=0.9)
 
     """
 
@@ -240,11 +243,13 @@ class RandomRotate(object):
 
 def shift(img, rightshift=5, downshift=5):
     """
+    Args:
+    img: the image input
+    rightshift: the pixels of shift right
+    downshift: the pixels of down right
 
-    :param img: the image input
-    :param rightshift: the pixels of shift right
-    :param downshift: the pixels of down right
-    :return: transformed img
+    :return
+    transformed img
 
     """
     if not _is_numpy_image(img):
@@ -264,7 +269,7 @@ class RandomShift(object):
     """shift the image.
 
         Args:
-            probability:the probability of the operation (0<double<=1)
+            probability:the probability of the operation (0<=double<=1)
             rightshift: the scale of the shift right (pixels)
             downshift:the scale of the shift down (pixels)
         Example:
@@ -346,8 +351,9 @@ def crop(img,
         random_rows_down:Number of values to remove from the edges in the bottom.
         random_cols_left:Number of values to remove from the edges in the left
         random_cols_right:Number of values to remove from the edges in the right
-        deep: the dimentions of the input image
-
+        deep: the dimentions of the input image(1 or 3)
+              1: one dimention image such as (256,256)
+              3: multi dimentions image such as (256,256,3) or (256,256,7)
         Returns
         -------
         Croped_image : ndarray
@@ -371,12 +377,12 @@ def crop(img,
     return img_new
 
 class RandomCrop(object):
-    """shift the image.
+    """randomcrop the image.
 
         Args:
             outsize: the shape of the croped image
         Example:
-            >>> transform_multi.RandomCrop(1, (256,256))
+            >>> transform_multi.RandomCrop((256,256))
 
     """
     def __init__(self,outsize=(224,224)):
@@ -394,6 +400,13 @@ def noise(img, uintpara=16, Mean=0, Var=None):
         Parameters
         ----------
         img : ndarray
+        uintpara: the deep of the image(8 or 16)
+                  8: uint8
+                  16: uint16
+        Mean:mean of the noise(generally 0)
+        Var:variance of the noise
+            0.01: generally suitable for uint8 image
+            0.00001: generally suitable for uint16 image
 
         Returns
         -------
@@ -426,6 +439,24 @@ def noise(img, uintpara=16, Mean=0, Var=None):
     return img_new
 
 class RandomNoise(object):
+    """add gaussian noise to the image
+
+            Parameters
+            ----------
+            probability : the probability of the operation (0<=double<=1)
+            uintpara: the deep of the image(8 or 16)
+                      8: uint8
+                      16: uint16
+            Mean:mean of the noise(generally 0)
+            Var:variance of the noise
+                0.01: generally suitable for uint8 image
+                0.00001: generally suitable for uint16 image
+
+            Returns
+            -------
+            Noised_image : ndarray
+    """
+
 
     def __init__(self,probability, uintpara=16, mean=0, var=None):
         if not 0<= probability <=1 :
@@ -478,31 +509,29 @@ def gaussianblur(img, sigma=1, multichannel=True):
     img_new = img_new.astype(type)
     return img_new
 
-def pad(img,pad_width=[(0,0),(0,0),(0,0)], mode='reflect',**kwargs):
-    """Pad the given image.
+class GaussianBlur(object):
+    """add gaussian noise to the image
 
-    Args:
-        pad_width : {sequence, array_like, int}
-                    Number of values padded to the edges of
-                    each axis. ((before_1, after_1), ...
-                    (before_N, after_N)) unique pad widths
-                     for each axis. ((before, after),) yields
-                     same before and after pad for each axis.
-                    (pad,) or int is a shortcut for before = after
-                    = pad width for all axes.
-        mode: str or function. contain{‘constant’,‘edge’,‘linear_ramp’,‘maximum’,‘mean’
-            , ‘median’, ‘minimum’, ‘reflect’,‘symmetric’,‘wrap’}
-    Examples
-        --------
+        Parameters
+        ----------
+        probability : the probability of the operation (0<=double<=1)
+        sigma :　　　 scalar or sequence of scalars, optional
+                    Standard deviation for Gaussian kernel. The standard
+                    deviations of the Gaussian filter are given for each axis as a
+                    sequence, or as a single number, in which case it is equal for
+                    all axes.
+    　　multichannel : bool, optional (default: None)
+                    Whether the last axis of the image is to be interpreted as multiple
+                    channels. If True, each channel is filtered separately (channels are
+                    not mixed together). Only 3 channels are supported. If `None`,
+                    the function will attempt to guess this, and raise a warning if
+                    ambiguous, when the array has shape (M, N, 3).
 
+        Returns
+        -------
+        blured_image : ndarray
     """
 
-    pad_width = pad_width
-    mode = mode
-    return np.pad(img, pad_width, mode)
-
-
-class GaussianBlur(object):
     def __init__(self, probability, sigma=1, multichannel=True):
         if not 0<= probability <=1 :
             raise ValueError('GaussianBlur.probability error')
@@ -546,7 +575,7 @@ def piecetransform(image, numcols=5, numrows=5, warp_left_right=10, warp_up_down
         --------
             >>> Transformed_img = piecetransform(image,numcols=10, numrows=10, warp_left_right=5, warp_up_down=5)
 
-        """
+    """
 
     type = image.dtype
 
@@ -597,6 +626,25 @@ def piecetransform(image, numcols=5, numrows=5, warp_left_right=10, warp_up_down
 
 
 class PieceTransfor(object):
+    """add gaussian noise to the image
+
+        Parameters
+        ----------
+        probability : the probability of the operation (0<=double<=1)
+        numcols : int, optional (default: 5)
+            numbers of the colums to transformation
+        numrows : int, optional (default: 5)
+            numbers of the rows to transformation
+        warp_left_right: int, optional (default: 10)
+            the pixels of transformation left and right
+        warp_up_down: int, optional (default: 10)
+            the pixels of transformation up and down
+
+        Returns
+        -------
+        Transformed_image : ndarray
+    """
+
     def __init__(self, probability, numcols=10, numrows=10, warp_left_right=10, warp_up_down=10):
         if not 0<= probability <=1 :
             raise ValueError('PieceTransfor.probability error')
@@ -623,20 +671,58 @@ class PieceTransfor(object):
         else:
             return img
 
-class CenterCrop(object):
-    """Crops the given PIL.Image at the center.
+def centercrop(img,outsize,target=None):
+    """
+        Parameters
+        ----------
+        img : ndarray
+        outsize : the size of out image
+        target : is or not the targrt(uesed for the semantic segmentation)
 
-    Args:
-        size (sequence or int): Desired output size of the crop. If size is an
-            int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+        Returns
+        -------
+        Croped_image : ndarray
+
+        Examples
+        --------
+        >>> Transformed_img = centercrop(image, [224,224])
+
     """
 
-    def __init__(self, size):
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        else:
-            self.size = size
+    if outsize[0] > img.shape[0] or outsize[1] > img.shape[1]:
+        raise ValueError("centercrop.outsize larger than the input image")
+    type = img.dtype
+    src_rows = img.shape[0]
+    src_cols = img.shape[1]
+    out_rows = outsize[0]
+    out_cols = outsize[1]
+
+    random_rows_up = int((src_rows - out_rows) / 2.)
+    random_cols_left = int((src_cols - out_cols) / 2.)
+    random_rows_down = src_rows - out_rows - random_rows_up
+    random_cols_right = src_cols - out_cols - random_cols_left
+
+    if target==None:
+       img_new = util.crop(img, ((random_rows_up, random_rows_down), (random_cols_left, random_cols_right), (0, 0)))
+       img_new = img_new.astype(type)
+       return img_new
+    elif target==True:
+        img_new = util.crop(img, ((random_rows_up, random_rows_down), (random_cols_left, random_cols_right)))
+        img_new = img_new.astype(type)
+        return img_new
+
+class CenterCrop(object):
+    """Crops the given Image at the center.
+
+    Args:
+        outsize : the size of out image
+        Examples
+        --------
+        >>> Transformed_img = CenterCrop([224,224])
+    """
+
+    def __init__(self, outsize):
+        self.outsize = outsize
 
     def __call__(self, img):
         """
@@ -646,14 +732,46 @@ class CenterCrop(object):
         Returns:
             Cropped image.
         """
+        if self.outsize[0] > img.shape[0] or self.outsize[1] > img.shape[1]:
+            raise ValueError("CenterCrop.outsize larger than the input image")
 
-        w, h = img.size
-        th, tw = self.size
-        x1 = int(round((w - tw) / 2.))
-        y1 = int(round((h - th) / 2.))
-        return x1, y1, tw, th
+        type = img.dtype
+        src_rows = img.shape[0]
+        src_cols = img.shape[1]
+        out_rows = self.outsize[0]
+        out_cols = self.outsize[1]
 
-        return crop(img, x1, y1, tw, th)
+        random_rows_up = int((src_rows - out_rows)/2.)
+        random_cols_left = int((src_cols - out_cols)/2.)
+        random_rows_down = src_rows - out_rows - random_rows_up
+        random_cols_right = src_cols - out_cols - random_cols_left
+
+        img_new = util.crop(img, ((random_rows_up, random_rows_down), (random_cols_left, random_cols_right), (0, 0)))
+        img_new = img_new.astype(type)
+        return img_new
+
+def pad(img,pad_width=[(0,0),(0,0),(0,0)], mode='reflect',**kwargs):
+    """Pad the given image.
+
+    Args:
+        pad_width : {sequence, array_like, int}
+                    Number of values padded to the edges of
+                    each axis. ((before_1, after_1), ...
+                    (before_N, after_N)) unique pad widths
+                     for each axis. ((before, after),) yields
+                     same before and after pad for each axis.
+                    (pad,) or int is a shortcut for before = after
+                    = pad width for all axes.
+        mode: str or function. contain{‘constant’,‘edge’,‘linear_ramp’,‘maximum’,‘mean’
+            , ‘median’, ‘minimum’, ‘reflect’,‘symmetric’,‘wrap’}
+    Examples
+        --------
+        >>> Transformed_img = pad(img,[(20,20),(20,20),(0,0)],mode='reflect')
+    """
+
+    pad_width = pad_width
+    mode = mode
+    return np.pad(img, pad_width, mode)
 
 class Pad(object):
     """Pad the given image.
@@ -671,7 +789,7 @@ class Pad(object):
             , ‘median’, ‘minimum’, ‘reflect’,‘symmetric’,‘wrap’}
     Examples
         --------
-        >>> paded=Pad(img,[(10,10),(20,20),(0,0)],"reflect")
+        >>> paded=Pad([(10,10),(20,20),(0,0)],"reflect")
 
     """
 
@@ -683,8 +801,74 @@ class Pad(object):
     def __call__(self, img):
         return np.pad(img, self.pad_width, self.mode)
 
+def resize(img, outsize=None, interpolation=cv2.INTER_NEAREST):
+    """resize the image.
+
+        Args:
+            img : the input image
+            outsize : the shape of the out image
+            interpolation: the model of the  interpolation{}
+
+        Examples
+            --------
+            >>> resized=resize(img,[(200,300)])
+    """
+
+
+    if outsize==None:
+       outsize1=img.shape[0]
+       outsize2 = img.shape[1]
+    else:
+        outsize1 = outsize[0]
+        outsize2 = outsize[1]
+
+    return cv2.resize(img, (outsize1,outsize2),interpolation)
+
+class Resize(object):
+    """resize the image.
+
+        Args:
+            img : the input image
+            outsize : the shape of the out image
+            interpolation: the model of the  interpolation
+                   INTER_NEAREST - a nearest-neighbor interpolation
+                   INTER_LINEAR - a bilinear interpolation (used by default)
+                   INTER_AREA - resampling using pixel area relation. It may
+                                be a preferred method for image decimation, as it gives moire’-free results.
+                                But when the image is zoomed, it is similar to the INTER_NEAREST method.
+                   INTER_CUBIC - a bicubic interpolation over 4x4 pixel neighborhood
+                   INTER_LANCZOS4 - a Lanczos interpolation over 8x8 pixel neighborhood
+
+        Examples
+            --------
+            >>> resized=Resize([(200,300)])
+    """
+
+    def __init__(self, outsize,interpolation=cv2.INTER_NEAREST):
+        self.outsize = outsize
+        self.interpolation=interpolation
+    def __call__(self, img):
+        img = img.astype(dtype=np.float)
+        if self.outsize[0] > img.shape[0] or self.outsize[1] > img.shape[1]:
+            raise ValueError("Resize.outsize larger than the input image")
+
+        img_resize=cv2.resize(img,(self.outsize[0],self.outsize[1]),self.interpolation)
+        img_resize = img_resize.astype(dtype=np.int32)
+        print(img_resize)
+        return img_resize
+
 ##======================= semantic segmentation =============================================
 class SegRandomRotate(object):
+    """rotate the image.
+
+        Args:
+            probability:the probability of the operation(0<=double<=1)
+        Example:
+            >>> transform_multi.Randomrotate(probability=0.9)
+
+    """
+
+
     def __init__(self, probability=0.5):
 
         if not 0 <= probability <= 1:
@@ -692,7 +876,8 @@ class SegRandomRotate(object):
         self.probability = probability
 
     def __call__(self, img, target):
-        pass
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegRandomRotate.img.size not match the SegRandomRotate.target.size")
         # if target==None:
         #     raise ValueError('SegRandomRotate has no target parameters ')
         angle = random.randint(0, 360)
@@ -705,6 +890,17 @@ class SegRandomRotate(object):
             return img, target
 
 class SegRandomShift(object):
+    """shift the image.
+
+            Args:
+                probability:the probability of the operation (0<=double<=1)
+                rightshift: the scale of the shift right (pixels)
+                downshift:the scale of the shift down (pixels)
+            Example:
+                >>> transform_multi.RandomShift(probability=1, rightshift=10, downshift=10)
+
+    """
+
     def __init__(self, probability=0.5, rightshift=5, downshift=5):
         if not 0 <= probability <= 1:
             raise ValueError("SegRandomShift.probability is error")
@@ -718,6 +914,8 @@ class SegRandomShift(object):
         self.downshift = downshift
 
     def __call__(self, img,target):
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegRandomShift.img.size not match the SegRandomShift.target.size")
         # if target==None:
         #     raise ValueError('SegRandomShift has no target parameters ')
         r = round(random.uniform(0, 1), 1)
@@ -731,10 +929,22 @@ class SegRandomShift(object):
             return img, target
 
 class SegRandomCrop(object):
+    """randomcrop the image.
+
+            Args:
+                outsize: the shape of the croped image
+            Example:
+                >>> transform_multi.RandomCrop((256,256))
+
+    """
+
     def __init__(self, outsize=(224, 224)):
         self.outsize = outsize
 
     def __call__(self, img, target):
+
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegRandomCrop.img.size not match the SegRandomCrop.target.size")
         # if target==None:
         #     raise ValueError('SegRandomCrop has no target parameters ')
         if self.outsize[0] > img.shape[0] or self.outsize[1] > img.shape[1]:
@@ -754,6 +964,23 @@ class SegRandomCrop(object):
         return img_trans, target_trans
 
 class SegRandomNoise(object):
+    """add gaussian noise to the image
+
+        Parameters
+        ----------
+        probability : the probability of the operation (0<=double<=1)
+        uintpara: the deep of the image(8 or 16)
+                  8: uint8
+                  16: uint16
+        Mean:mean of the noise(generally 0)
+        Var:variance of the noise
+            0.01: generally suitable for uint8 image
+            0.00001: generally suitable for uint16 image
+
+        Returns
+        -------
+        Noised_image : ndarray
+    """
 
     def __init__(self, probability, uintpara=16, mean=0, var=None):
         if not 0 <= probability <= 1:
@@ -767,6 +994,8 @@ class SegRandomNoise(object):
         self.var = var
 
     def __call__(self, img, target):
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegRandomNoise.img.size not match the SegRandomNoise.target.size")
         # if target==None:
         #     raise ValueError('SegRandomNoise has no target parameters ')
         r = round(random.uniform(0, 1), 1)
@@ -779,6 +1008,28 @@ class SegRandomNoise(object):
             return img, target
 
 class SegGaussianBlur(object):
+    """add gaussian noise to the image
+
+            Parameters
+            ----------
+            probability : the probability of the operation (0<=double<=1)
+            sigma :　　　 scalar or sequence of scalars, optional
+                        Standard deviation for Gaussian kernel. The standard
+                        deviations of the Gaussian filter are given for each axis as a
+                        sequence, or as a single number, in which case it is equal for
+                        all axes.
+        　　multichannel : bool, optional (default: None)
+                        Whether the last axis of the image is to be interpreted as multiple
+                        channels. If True, each channel is filtered separately (channels are
+                        not mixed together). Only 3 channels are supported. If `None`,
+                        the function will attempt to guess this, and raise a warning if
+                        ambiguous, when the array has shape (M, N, 3).
+
+            Returns
+            -------
+            blured_image : ndarray
+    """
+
     def __init__(self, probability, sigma=1, multichannel=True):
         if not 0 <= probability <= 1:
             raise ValueError('SegGaussianBlur.probability error')
@@ -789,6 +1040,8 @@ class SegGaussianBlur(object):
         self.multichannel = multichannel
 
     def __call__(self, img, target):
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegGaussianBlur.img.size not match the SegGaussianBlur.target.size")
         # if target==None:
         #     raise ValueError('SegGaussianBlur has no target parameters ')
         r = round(random.uniform(0, 1), 1)
@@ -800,6 +1053,25 @@ class SegGaussianBlur(object):
             return img, target
 
 class SegPieceTransfor(object):
+    """add gaussian noise to the image
+
+            Parameters
+            ----------
+            probability : the probability of the operation (0<=double<=1)
+            numcols : int, optional (default: 5)
+                numbers of the colums to transformation
+            numrows : int, optional (default: 5)
+                numbers of the rows to transformation
+            warp_left_right: int, optional (default: 10)
+                the pixels of transformation left and right
+            warp_up_down: int, optional (default: 10)
+                the pixels of transformation up and down
+
+            Returns
+            -------
+            Transformed_image : ndarray
+    """
+
     def __init__(self, probability, numcols=10, numrows=10, warp_left_right=10, warp_up_down=10):
         if not 0 <= probability <= 1:
             raise ValueError('SegPieceTransfor.probability error')
@@ -819,6 +1091,8 @@ class SegPieceTransfor(object):
         self.warp_up_down = warp_up_down
 
     def __call__(self, img, target):
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegPieceTransfor.img.size not match the SegPieceTransfor.target.size")
         # if target==None:
         #     raise ValueError('SegPieceTransfor has no target parameters ')
         r = round(random.uniform(0, 1), 1)
@@ -852,6 +1126,8 @@ class SegRandomFlip(object):
     # def __init__(self):
 
     def __call__(self, img, target):
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegRandomFlip.img.size not match the SegRandomFlip.target.size")
         # if target==None:
         #     raise ValueError('SegRandomFlip has no target parameters ')
         flip_mode = random.randint(-1, 2)
@@ -885,60 +1161,144 @@ class SegPad(object):
         self.mode = mode
 
     def __call__(self, img, target):
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegPad.img.size not match the SegPad.target.size")
         img_pad=np.pad(img, self.img_pad_width, self.mode)
         target_pad = np.pad(target, self.target_pad_width, self.mode)
         return img_pad, target_pad
 
-# ====================================================================================================
-
-class Scale(object):
-    """Rescale the input PIL.Image to the given size.
+class SegCenterCrop(object):
+    """Crops the given Image at the center.
 
     Args:
-        size (sequence or int): Desired output size. If size is a sequence like
-            (w, h), output size will be matched to this. If size is an int,
-            smaller edge of the image will be matched to this number.
-            i.e, if height > width, then image will be rescaled to
-            (size * height / width, size)
-        interpolation (int, optional): Desired interpolation. Default is
-            ``PIL.Image.BILINEAR``
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made.
     """
 
-    def __init__(self, size, interpolation=Image.BILINEAR):
-        assert isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)
-        self.size = size
-        self.interpolation = interpolation
+    def __init__(self, outsize):
+        self.outsize = outsize
 
-    def __call__(self, img):
+    def __call__(self, img, target):
         """
         Args:
-            img (PIL.Image): Image to be scaled.
+            img : Image to be cropped.
 
         Returns:
-            PIL.Image: Rescaled image.
+            Cropped image.
         """
-        return scale(img, self.size, self.interpolation)
+        if self.outsize[0] > img.shape[0] or self.outsize[1] > img.shape[1]:
+            raise ValueError("CenterCrop.outsize larger than the input image")
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegCenterCrop.img.size not match the SegCenterCrop.target.size")
 
-def scale(img, size, interpolation=Image.BILINEAR):
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-    if not (isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)):
-        raise TypeError('Got inappropriate size arg: {}'.format(size))
+        type1=img.dtype
+        type2=target.dtype
+        src_rows = img.shape[0]
+        src_cols = img.shape[1]
+        out_rows = self.outsize[0]
+        out_cols = self.outsize[1]
 
-    if isinstance(size, int):
-        w, h = img.size
-        if (w <= h and w == size) or (h <= w and h == size):
-            return img
-        if w < h:
-            ow = size
-            oh = int(size * h / w)
-            return img.resize((ow, oh), interpolation)
-        else:
-            oh = size
-            ow = int(size * w / h)
-            return img.resize((ow, oh), interpolation)
-    else:
-        return img.resize(size, interpolation)
+        random_rows_up = int((src_rows - out_rows) / 2.)
+        random_cols_left = int((src_cols - out_cols) / 2.)
+        random_rows_down = src_rows - out_rows - random_rows_up
+        random_cols_right = src_cols - out_cols - random_cols_left
+
+        img_new = util.crop(img,((random_rows_up, random_rows_down), (random_cols_left, random_cols_right), (0, 0)))
+        img_new = img_new.astype(type1)
+
+        target_new = util.crop(target,[(random_rows_up, random_rows_down), (random_cols_left, random_cols_right)])
+        target_new = target_new.astype(type2)
+        return img_new, target_new
+
+class   SegResize(object):
+    """resize the image.
+
+        Args:
+            img : the input image
+            outsize : the shape of the out image
+            interpolation: the model of the  interpolation
+                   INTER_NEAREST - a nearest-neighbor interpolation
+                   INTER_LINEAR - a bilinear interpolation (used by default)
+                   INTER_AREA - resampling using pixel area relation. It may
+                                be a preferred method for image decimation, as it gives moire’-free results.
+                                But when the image is zoomed, it is similar to the INTER_NEAREST method.
+                   INTER_CUBIC - a bicubic interpolation over 4x4 pixel neighborhood
+                   INTER_LANCZOS4 - a Lanczos interpolation over 8x8 pixel neighborhood
+
+        Examples
+            --------
+            >>> resized=Resize([(200,300)])
+    """
+    def __init__(self, outsize, interpolation=cv2.INTER_NEAREST):
+        self.outsize = outsize
+        self.interpolation = interpolation
+
+    def __call__(self, img, target):
+        if self.outsize[0] > img.shape[0] or self.outsize[1] > img.shape[1]:
+            raise ValueError("SegResize.outsize larger than the input image")
+        if not (img.shape[0]==target.shape[0] and img.shape[1]==target.shape[1]):
+            raise ValueError("SegResize.img.size not match the SegResize.target.size")
+
+        img = img.astype(dtype=np.float)
+        target = target.astype(dtype=np.float)
+        img_resize=cv2.resize(img, (self.outsize[0], self.outsize[1]), self.interpolation)
+        target_resize=cv2.resize(target, (self.outsize[0], self.outsize[1]), interpolation=cv2.INTER_NEAREST)
+
+        img_resize = img_resize.astype(dtype=np.int32)
+        target_resize = target_resize.astype(dtype=np.int32)
+
+        return img_resize, target_resize
+# ====================================================================================================
+
+# class Scale(object):
+#     """Rescale the input PIL.Image to the given size.
+#
+#     Args:
+#         size (sequence or int): Desired output size. If size is a sequence like
+#             (w, h), output size will be matched to this. If size is an int,
+#             smaller edge of the image will be matched to this number.
+#             i.e, if height > width, then image will be rescaled to
+#             (size * height / width, size)
+#         interpolation (int, optional): Desired interpolation. Default is
+#             ``PIL.Image.BILINEAR``
+#     """
+#
+#     def __init__(self, size, interpolation=Image.BILINEAR):
+#         assert isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)
+#         self.size = size
+#         self.interpolation = interpolation
+#
+#     def __call__(self, img):
+#         """
+#         Args:
+#             img (PIL.Image): Image to be scaled.
+#
+#         Returns:
+#             PIL.Image: Rescaled image.
+#         """
+#         return scale(img, self.size, self.interpolation)
+#
+# def scale(img, size, interpolation=Image.BILINEAR):
+#     if not _is_pil_image(img):
+#         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+#     if not (isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)):
+#         raise TypeError('Got inappropriate size arg: {}'.format(size))
+#
+#     if isinstance(size, int):
+#         w, h = img.size
+#         if (w <= h and w == size) or (h <= w and h == size):
+#             return img
+#         if w < h:
+#             ow = size
+#             oh = int(size * h / w)
+#             return img.resize((ow, oh), interpolation)
+#         else:
+#             oh = size
+#             ow = int(size * w / h)
+#             return img.resize((ow, oh), interpolation)
+#     else:
+#         return img.resize(size, interpolation)
 
 
 # def pad(img, padding, fill=0):
